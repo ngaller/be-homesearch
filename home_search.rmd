@@ -1,0 +1,312 @@
+---
+title: "Belgium Home Search"
+output:
+  html_document:
+    df_print: paged
+---
+
+Applying R to automating a home search.
+
+# Location, location, location
+
+As I am preparing for a move, I have been 
+spending a lot of time doing research on real estate sites trying to find a rental.  This is compounded by the 
+fact that we are able to do very few visits in person due to the sanitary crisis, so we really need to optimize the 
+search.  Some factors are easy: we know we want a yard, for example, and we need at least 4 rooms - 
+3 for us and the kids and an office for me.  The real estate sites let me set those criteria easily.  
+Some are a little bit harder: I'd like a basement, but it's not really a deal breaker if the house doesn't have one
+and is otherwise nice.  Then there is the location.  This is easily the most important factor: distance to school, 
+work, friends.  This will be my first time having to commute to an office in over 4 years, and even though it 
+won't be every day I really don't want it to become a nightmare!  For the school, we have a couple possible schools
+picked out (we had a limited pool since we really wanted a bilingual school so the boy can keep practicing his 
+English).  So we could be close to either one, but it's really a must - morning minutes are a precious commodity
+with 2 kids!  And of course, the friends - it's not that big of a deal if we have to add 5 minute to that trip as 
+we won't be doing it every day, but having to drive 45 minutes after a raclette can be trying.
+
+So I wanted a sort of weighted score for the distance which was definitely not an option for the real estate site 
+(the best they could offer me was a search by postal code).  And I wanted to be able to consider a home that was
+maybe not ideal in other aspects, if it meant we'd be a lot closer to what we wanted (or vice versa, if a dream home
+meant adding a few minutes to the commute).  As I have been doing a lot of training with R lately it seemed like the
+perfect project to put those skills to the test.  My goal was thus to get a list of homes from the real estate site 
+with the characteristic that interested me, geocode them and calculate a distance score for each (according to the 
+minimal distance to each of my defined category), then calculate the overall score by using some tweaked factors
+(so much for total size, so much for the basement, etc).  Finally plot that against the price to find my dream 
+home (or at least, the homes to focus on).
+
+# Sources
+
+ - `pois.csv`, hand-written dataset (points of interest) with:
+    - Category  (if there are multiple poi in same category we are going to keep the closest one for each home)
+    - Weight (which is category specific, so if there are multiple poi in same category they should have the same weight)
+    - Address
+    - Lat / Lng (we'll fill those in if missing)
+ - `zipcodes_fr_num_new.xls`, postcode data from [BE post](https://www.bpost.be/site/fr/envoyer/adressage/rechercher-un-code-postal)
+ - `geocodes.csv`, a list of geocoded towns (from [jedi.be](http://www.jedi.be/blog/2009/04/29/geocoding-belgium-postal-codes/)) - I added the column names
+ - `homes.csv`, the homes we want to search - this is obtained by scraping a real estate site with Python.  I describe the process under "Getting the home data".
+ 
+Let's start by including some libraries and getting the base data.
+
+
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+library(sp)
+library(httr)
+library(xlsx)
+# this one will read the .env file where I define my API key
+library(dotenv)
+
+pois <- read_delim("pois.csv", delim=";")
+geocodes <- read_delim("geocodes.csv", delim=";")
+postcodes <- read_excel("zipcodes_num_fr_new.xls", 1)
+postcodes$City = iconv(toupper(postcodes$Localité), to="ASCII//TRANSLIT")
+geocodes <- geocodes %>%
+  left_join(postcodes, "City") %>%
+  select(City, PostalCode = "Code postal", Lat, Lng)
+rm(postcodes)  # don't need this anymore
+```
+
+# Geocoding the POI
+
+Geocoding lets me get the coordinates (Lat and Lng) for each POI.  There is a ggmap package with support for Google
+but I used Mapquest instead which has a more permissive license (and this let me practice with httr).  I kept 
+the same structure as the one from ggmap though.
+
+Prepare a geocode function.  This will be used for addresses that have a complete street address provided 
+(we'll use that both for homes and for POIs)
+
+```{r message=FALSE}
+API_KEY = Sys.getenv("MAPQUEST_API_KEY")
+COUNTRY = Sys.getenv("COUNTRY")
+
+geocode <- function(location) {
+  # vectorize for many locations
+  if(length(location) > 1){
+    return(map_dfr(as.list(location), geocode))
+  }
+  NOT_FOUND <- data.frame(Lat=NA, Lng=NA)
+  if(is.na(location)) {
+    return(NOT_FOUND)
+  }
+  url = "http://www.mapquestapi.com/geocoding/v1/address"
+  r <- GET(url, 
+           query = list(key=API_KEY, location=paste(location, COUNTRY, sep=", "), maxResults=1, outFormat="csv")
+           )
+  if(status_code(r) != 200) {
+    warn_for_status(r)
+    return(NOT_FOUND)
+  }
+  parsed <- content(r, "parsed")
+  if(nrow(parsed) == 0 || str_ends(parsed$GeocodeQualityCode, "X")) {
+    warning(paste("No valid address: ", location))
+    return(NOT_FOUND)
+  }
+  return(parsed %>%  select(Lat, Lng))
+}
+mutate_geocode <- function(data, location) {
+  locs <- data[[deparse(substitute(location))]]
+  if(length(locs) == 0) {
+    return(data)
+  }
+  gcdf <- geocode(locs)
+  return(bind_cols(data %>% select(-Lat, -Lng), gcdf))
+}
+
+# Try it out:
+# Some address that exists:
+geocode("25 rue des combattants, 1300 Wavre, Belgium")
+# One that does not:
+geocode("Nonexistent address")
+```
+
+Geocode the POIs (if they are missing position)
+
+```{r message=FALSE}
+missing <- setdiff(c("Lat", "Lng"), names(pois))
+pois[missing] <- NA
+if(!all(!is.na(pois$Lat))) {
+  pois <- pois %>% mutate_geocode(Address)
+}
+pois %>% select(-Address)
+```
+
+
+# Getting the home data
+
+I started by getting a list of postal codes with geocodes (`zipcodes_fr_num_new.xls` and `geocodes.csv`).  Then 
+figure out all the post codes within a 15 km radius of work.  This let me create a search on the real estate site.
+I then used a Python script (not shown here) to scrape the homes.
+
+```{r}
+target <- data.matrix(pois[1,] %>% select(Lng, Lat))
+zip_points = data.matrix(geocodes %>% select(Lng, Lat))
+zip_dists = data.frame(PostalCode=geocodes$PostalCode, Dist=spDistsN1(zip_points, target, TRUE))
+zip_dists %>% 
+  group_by(PostalCode) %>% 
+  summarize(Dist=mean(Dist)) %>% 
+  filter(Dist < 15)
+```
+
+
+# Calculate distance score
+
+For each home we are going to:
+
+ - geocode it (if not done yet).  For now we could geocode simply using the postal code?
+ - calculate the min distance to each poi category and store it as a column.  Ideally, we'd calculate the distance using mapquest too, so we have actual travel time!  Maybe for the next version.  The road network is dense enough in that area that it is a close enough approximation.
+ - calculate the distance score, using the category weights
+
+Now we can read in the home data.
+
+```{r include=FALSE}
+homes <- read_csv("homes.csv", col_types="ciicciiddicccccccc")
+homes <- drop_na(homes, `Postal code`)    # keep only the ones with a post code
+# homes <- filter(homes, Available != "RENTED")
+```
+
+I combine it with some address data that was manually collected (by calling the realtors):
+
+```{r}
+be = read_excel("Rentals in Belgium.xlsx", 1) %>% select(`Code #`, Address, Available)
+homes <- homes %>% 
+  left_join(be, by="Code #") %>%
+  filter(is.na(Available) || Available != "RENTED")
+```
+
+
+Calculate coordinates for each home that is missing it.  Try to geocode first, for the ones that have an address
+provided.  If that fails use the postal code to make a match.
+
+```{r include=FALSE}
+homes <- homes %>% 
+  mutate(Address = ifelse(is.na(Address) && Street != "", paste(Street, `Postal code`, City, sep=", "), Address))
+missing <- is.na(homes$Lat)
+geocoded = mutate_geocode(homes[missing,], Address)
+homes[missing,]$Lng = geocoded$Lng
+homes[missing,]$Lat = geocoded$Lat
+missing <- is.na(homes$Lat)
+mean_geos <- geocodes %>% 
+  group_by(PostalCode) %>% 
+  summarise(Lat=mean(Lat), Lng=mean(Lng))
+zip_pos <- homes[missing,] %>% 
+  left_join(mean_geos, by=c("Postal code" = "PostalCode"), suffix=c(".home", "")) %>%
+  select(`Code #`, `Postal code`, Lat, Lng)
+homes[missing,]$Lng <- zip_pos$Lng
+homes[missing,]$Lat <- zip_pos$Lat
+```
+
+Get the points into a matrix (using `data.matrix`), and calculate the distances for each category.
+For each category, collect the points into a matrix,
+then call `spDists` to obtain a matrix of the distances (each row is a home).
+Use `apply` to get the minimum value of each row, and assign the result as the distance for that specific 
+category in the home dataframe.
+Finally we calculate a total distance, by taking a weighted average of the distances.
+
+```{r}
+has_lat <- !is.na(homes$Lat)
+Mpoints <- data.matrix(homes[has_lat,] %>% select(Lng, Lat))
+score <- rep(0, length(has_lat))
+total_weight <- 0
+for(cat in unique(pois$Category)) {
+  Mtarget <- data.matrix(pois %>% filter(Category == cat) %>% select(Lng, Lat, Weight))
+  wt <- Mtarget[1,3]
+  Mtarget <- rbind(Mtarget[,-3])
+  dists <- spDists(Mpoints, Mtarget, longlat=TRUE)
+  min_dists <- apply(dists, 1, min)
+  col <- paste("dist.", cat, sep="")
+  homes[has_lat, col] <- min_dists
+  score <- score + homes[col] * wt
+  total_weight <- total_weight + wt
+}
+homes[has_lat, "dist.Total"] <- score / total_weight
+```
+
+To calculate a score we are going to map this into a single number using a simple linear regression, 
+it should go from 400 (very good) to 0 (or negative if the house is really far, but we should not even have 
+those on the list).  Anything between 0 and 10 is great then it starts getting down more quickly.
+We'll set a diminishing return pattern on the size as well, because above 250 sq meter does not help us very much.
+
+```{r}
+f <- lm(y ~ x, data=data.frame(x=c(0, 10, 14, 16), y=c(400, 300, 100, 0)))
+homes$dist.Score <- predict(f, homes %>% rename(x=dist.Total))
+f <- lm(y ~ x, data=data.frame(x=c(0, 250, 350), y=c(0, 250, 270)))
+homes$size.Score <- predict(f, homes %>% rename(x=SqMeter))
+```
+
+
+# Calculate total score
+
+Make some flags for the stuff that is in as text, and calculate the new TotalScore column:
+
+```{r}
+homes <- homes %>%
+  mutate(has_basement =  Basement == "Yes", 
+         has_office = Office == "Yes", 
+         has_garage = Garage == "Yes",
+         has_attic = Attic == "Yes") %>%
+  mutate_at(vars(starts_with("has_")), ~replace(., is.na(.), FALSE)) %>%
+  mutate(TotalScore = size.Score + 
+           Bedrooms * 50 + 
+           has_office * 50 + 
+           has_garage * 30 + 
+           has_basement * 30 +
+           has_attic * 15 +
+           dist.Score) %>%
+  select(-starts_with("has_")) %>%
+  arrange(desc(TotalScore))
+```
+
+
+We can now write the results to a new spreadsheet:
+
+```{r}
+write.xlsx(x = homes, file="homes_scored.xlsx")
+```
+
+Or plot it.  I used plotly to get an interactive chart where I could click on a dot to visit the relevant page,
+and have a thumbnail shown when I hover a point (though the images will probably be removed at some point in the
+future, since they are pulled directly from the real estate website).
+
+```{r message=FALSE, warning=FALSE}
+library(plotly)
+library(htmlwidgets)
+
+homes$`Postal code` <- as.character(homes$`Postal code`)
+homes$ID <- paste(homes$`Code #`, homes$`Postal code`)
+
+# ggplot(head(homes, 10), aes(x=`Rent`, y=TotalScore, color=ID)) + geom_point()
+p_byrent <- plot_ly(head(homes, 25), 
+        type="scatter", mode='markers', hoverinfo='text') %>%
+  config(displayModeBar = FALSE) %>%
+  add_markers(x = ~ Rent, 
+              y = ~ TotalScore, 
+              text = ~ ID, 
+              color = ~ `Postal code`, 
+              customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
+  layout(xaxis = list(title = list(text = "Rent €")),
+         yaxis = list(title = list(text = "Score")),
+         title = "Score by Rent") %>%
+  # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
+  htmlwidgets::onRender(readLines("tooltip-images.js"))
+p_bydist <- plot_ly(head(homes, 25), 
+        type="scatter", mode='markers', hoverinfo='text') %>%
+  config(displayModeBar = FALSE) %>%
+  add_markers(x = ~ dist.School, 
+              y = ~ dist.Work, 
+              text = ~ ID, 
+              color = ~ `Postal code`, 
+              customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
+  layout(xaxis = list(title = list(text = "School km")),
+         yaxis = list(title = list(text = "Work km")),
+         title = "Distances") %>%  
+  # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
+  htmlwidgets::onRender(readLines("tooltip-images.js"))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p_byrent
+p_bydist
+```
+
+And I found my dream home!  Well, not really, because the top one has some other issues, but at least this gets us closer.
+

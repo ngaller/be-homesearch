@@ -1,0 +1,7 @@
+.env
+rsconnect/
+.Rhistory
+*.pyc
+# don't want those in github, they contain some private data
+Rentals in Belgium.xlsx
+pois.csv
