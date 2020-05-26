@@ -236,7 +236,13 @@ homes$size.Score <- predict(f, homes %>% rename(x=SqMeter))
 
 # Calculate total score
 
-Make some flags for the stuff that is in as text, and calculate the new TotalScore column:
+Make some flags for the stuff that is in as text, and calculate the new TotalScore column.  
+I came up with some simple factors.  I think you could assign a score manually to a handful of homes, or
+sort them, and then use ML to calculate the score.  This dataset is not that big so I'm not sure
+you'd get a meaningful result (and more importantly I ran out of time for now).  But it could be a cool screening
+tool for real estate sites to learn what houses you like.  I show you 30 pairs of houses and you tell me which one 
+you like best.  Then I come up with a scoring algorithm.  I'm sure dating sites do that already, but home search sites
+seem to seriously lag behind.
 
 ```{r}
 homes <- homes %>%
@@ -275,7 +281,7 @@ homes$`Postal code` <- as.character(homes$`Postal code`)
 homes$ID <- paste(homes$`Code #`, homes$`Postal code`)
 
 # ggplot(head(homes, 10), aes(x=`Rent`, y=TotalScore, color=ID)) + geom_point()
-p_byrent <- plot_ly(head(homes, 25), 
+p_byrent <- plot_ly(head(homes, 30), 
         type="scatter", mode='markers', hoverinfo='text') %>%
   config(displayModeBar = FALSE) %>%
   add_markers(x = ~ Rent, 
@@ -288,7 +294,7 @@ p_byrent <- plot_ly(head(homes, 25),
          title = "Score by Rent") %>%
   # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
   htmlwidgets::onRender(readLines("tooltip-images.js"))
-p_bydist <- plot_ly(head(homes, 25), 
+p_bydist <- plot_ly(head(homes, 30), 
         type="scatter", mode='markers', hoverinfo='text') %>%
   config(displayModeBar = FALSE) %>%
   add_markers(x = ~ dist.School, 
@@ -298,13 +304,24 @@ p_bydist <- plot_ly(head(homes, 25),
               customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
   layout(xaxis = list(title = list(text = "School km")),
          yaxis = list(title = list(text = "Work km")),
-         title = "Distances") %>%  
+         title = "Distances to School / Work") %>%  
   # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
   htmlwidgets::onRender(readLines("tooltip-images.js"))
 ```
 
+This is the chart by rent, so something in the top left corner would be great.  
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 p_byrent
+```
+
+And this one is by distance, so the ones in the bottom left corner are the best (closest to school and work).  
+Some houses in the same zip that did not have an address end up 
+sitting on top of one another so the hover does not work great here.  
+With ggplot I could do `geom_jitter`, but not with plotly.  Something to 
+come back and fix later.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 p_bydist
 ```
 
