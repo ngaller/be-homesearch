@@ -179,7 +179,7 @@ provided.  If that fails use the postal code to make a match.
 
 ```{r include=FALSE}
 homes <- homes %>% 
-  mutate(Address = ifelse(is.na(Address) && Street != "", paste(Street, `Postal code`, City, sep=", "), Address))
+  mutate(Address = ifelse(is.na(Address) & Street != "", paste(Street, `Postal code`, City, sep=", "), Address))
 missing <- is.na(homes$Lat)
 geocoded = mutate_geocode(homes[missing,], Address)
 homes[missing,]$Lng = geocoded$Lng
@@ -270,8 +270,8 @@ write.xlsx(x = homes, file="homes_scored.xlsx")
 ```
 
 Or plot it.  I used plotly to get an interactive chart where I could click on a dot to visit the relevant page,
-and have a thumbnail shown when I hover a point (though the images will probably be removed at some point in the
-future, since they are pulled directly from the real estate website).
+and have a thumbnail shown when I hover a point.  The images will probably be removed at some point in the
+future, since they are pulled directly from the real estate website and I am not renewing the scraping data.
 
 ```{r message=FALSE, warning=FALSE}
 library(plotly)
@@ -327,3 +327,10 @@ p_bydist
 
 And I found my dream home!  Well, not really, because the top one has some other issues, but at least this gets us closer.
 
+# 2021 Update
+
+We have now been living in our new home for close to a year, and it has turned out really perfect for us from a
+location and amenities perspective.  It's really amazing to me that this house would not have attracted my attention
+if the home search tool I built had not put it on my radar - first, by automating the postal code search to let me
+build a broad search, and then by highlighting its score.  We are now slowly thinking about buying a property here
+in the not too distant future and I will be sure to revisit this tool when we get to the home search stage again.
