@@ -161,6 +161,7 @@ Now we can read in the home data.
 ```{r include=FALSE}
 homes <- read_csv("homes.csv", col_types="ciicciiddicccccccc")
 homes <- drop_na(homes, `Postal code`)    # keep only the ones with a post code
+homes <- drop_na(homes, `Price`)
 # homes <- filter(homes, Available != "RENTED")
 ```
 
@@ -221,9 +222,9 @@ for(cat in unique(pois$Category)) {
 homes[has_lat, "dist.Total"] <- score / total_weight
 ```
 
-To calculate a score we are going to map this into a single number using a simple linear regression, 
+To calculate a score from the distance we are going to map this into a single number using a simple linear regression, 
 it should go from 400 (very good) to 0 (or negative if the house is really far, but we should not even have 
-those on the list).  Anything between 0 and 10 is great then it starts getting down more quickly.
+those on the list).  Anything between 0 and 10km is great then it starts getting down more quickly.
 We'll set a diminishing return pattern on the size as well, because above 250 sq meter does not help us very much.
 
 ```{r}
@@ -280,39 +281,40 @@ library(htmlwidgets)
 homes$`Postal code` <- as.character(homes$`Postal code`)
 homes$ID <- paste(homes$`Code #`, homes$`Postal code`)
 
-# ggplot(head(homes, 10), aes(x=`Rent`, y=TotalScore, color=ID)) + geom_point()
-p_byrent <- plot_ly(head(homes, 30), 
+# ggplot(head(homes, 10), aes(x=`Price`, y=TotalScore, color=ID)) + geom_point()
+p_byprice <- plot_ly(head(homes, 30), 
         type="scatter", mode='markers', hoverinfo='text') %>%
   config(displayModeBar = FALSE) %>%
-  add_markers(x = ~ Rent, 
+  add_markers(x = ~ Price, 
               y = ~ TotalScore, 
               text = ~ ID, 
               color = ~ `Postal code`, 
-              customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
-  layout(xaxis = list(title = list(text = "Rent €")),
+              customdata = ~ paste(Link, Image, sep="|"),  
+              colors="Paired") %>%
+  layout(xaxis = list(title = list(text = "Price €")),
          yaxis = list(title = list(text = "Score")),
-         title = "Score by Rent") %>%
+         title = "Score by Price") %>%
   # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
   htmlwidgets::onRender(readLines("tooltip-images.js"))
-p_bydist <- plot_ly(head(homes, 30), 
-        type="scatter", mode='markers', hoverinfo='text') %>%
-  config(displayModeBar = FALSE) %>%
-  add_markers(x = ~ dist.School, 
-              y = ~ dist.Work, 
-              text = ~ ID, 
-              color = ~ `Postal code`, 
-              customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
-  layout(xaxis = list(title = list(text = "School km")),
-         yaxis = list(title = list(text = "Work km")),
-         title = "Distances to School / Work") %>%  
-  # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
-  htmlwidgets::onRender(readLines("tooltip-images.js"))
+# p_bydist <- plot_ly(head(homes, 30), 
+#         type="scatter", mode='markers', hoverinfo='text') %>%
+#   config(displayModeBar = FALSE) %>%
+#   add_markers(x = ~ dist.School, 
+#               y = ~ dist.Work, 
+#               text = ~ ID, 
+#               color = ~ `Postal code`, 
+#               customdata = ~ paste(Link, Image, sep="|"),  colors="Paired") %>%
+#   layout(xaxis = list(title = list(text = "School km")),
+#          yaxis = list(title = list(text = "Work km")),
+#          title = "Distances to School / Work") %>%  
+#   # image tooltips from https://plotly-r.com/supplying-custom-data.html#fig:tooltip-image
+#   htmlwidgets::onRender(readLines("tooltip-images.js"))
 ```
 
-This is the chart by rent, so something in the top left corner would be great.  
+This is the chart by price, so something in the top left corner would be great.  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-p_byrent
+p_byprice
 ```
 
 And this one is by distance, so the ones in the bottom left corner are the best (closest to school and work).  
@@ -322,7 +324,7 @@ With ggplot I could do `geom_jitter`, but not with plotly.  Something to
 come back and fix later.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-p_bydist
+# p_bydist
 ```
 
 And I found my dream home!  Well, not really, because the top one has some other issues, but at least this gets us closer.

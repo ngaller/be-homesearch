@@ -8,7 +8,7 @@ import csv
 from fake_useragent import UserAgent
 
 BASE = "https://www.immoweb.be/fr"
-SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&postalCodes=BE-1315,BE-1325,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=500000&orderBy=newest"
+SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=460000&orderBy=newest"
 HOME = "https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
 
 
@@ -97,22 +97,42 @@ class API:
         soup = BeautifulSoup(r.content, "html.parser")
         return soup
 
+def read_existing(path):
+    """
+    Retrieve existing homes from the CSV file.
+    Return a dictionary by code.
+    """
+    with open(path, "r") as csvfile:
+        reader = csv.DictReader(csvfile)
+        return {
+            row['Code #']: row
+            for row in reader
+        }
 
-def get_homes(api):
+def get_homes(api, existing_homes):
     for i in range(1, 5):
         search_results = api.search(i)
         if not search_results:
             break
         for house in search_results:
             try:
-                yield api.get_home(house)
+                existing = existing_homes.get(house["id"])
+                if existing:
+                    # to speed up retrieval, use existing home data if we have it.
+                    print(f"Using existing home data for {existing['Code #']}")
+                    # in case the price was updated, we'll have it in the search results
+                    existing["Price"] = house["price"]
+                    yield existing
+                else:
+                    yield api.get_home(house)
             except Exception as e:
                 print('Error getting property', house['id'], ': ', str(e))
                 continue
 
 
 w = None
-with open('homes.csv', 'w', newline='') as csvfile:
+existing_homes = read_existing("homes.csv")
+with open("homes.csv", 'w', newline='') as csvfile:
     for home in get_homes(API()):
         if not w:
             w = csv.DictWriter(csvfile, fieldnames=home.keys())
