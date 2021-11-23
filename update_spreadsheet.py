@@ -2,6 +2,7 @@ import csv
 import os
 import os.path
 import sys
+from dataclasses import dataclass
 from typing import Iterable, Dict, List
 
 import dotenv
@@ -20,6 +21,12 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 # The ID and range of a sample spreadsheet.
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 SPREADSHEET_GID = os.environ["SPREADSHEET_GID"]
+
+
+@dataclass
+class ExistingCode:
+    row_index: int
+    hidden: bool
 
 
 def build_service():
@@ -51,12 +58,17 @@ def build_service():
     return sheet
 
 
-def read_codes(sheet) -> Dict[str, int]:
+def read_codes(sheet) -> Dict[str, ExistingCode]:
     """Get the codes that are already on the spreadsheet"""
-    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
-                                range="Houses!A2:A").execute()
-    values = result.get('values', [])
-    return {r[0]: i for i, r in enumerate(values)}
+    request = sheet.get(spreadsheetId=SPREADSHEET_ID,
+                        ranges=["Houses!A2:A"],
+                        includeGridData=True).execute()
+    sheet_data = request["sheets"][0]["data"][0]
+    result = {}
+    for i, (data, metadata) in enumerate(zip(sheet_data["rowData"], sheet_data["rowMetadata"])):
+        code = data["values"][0]["formattedValue"]
+        result[code] = ExistingCode(row_index=i, hidden=bool(metadata.get("hiddenByUser")))
+    return result
 
 
 def read_headers(sheet) -> List[str]:
@@ -153,7 +165,7 @@ def main(home_csv):
     if homes_to_add:
         print("Adding", len(homes_to_add), "new homes", ", ".join(h["Code #"] for h in homes_to_add))
         add_homes(sheet, headers, homes_to_add)
-    rows_to_remove = [(i, c) for c, i in existing_codes.items() if c not in homes]
+    rows_to_remove = [(i.row_index, c) for c, i in existing_codes.items() if c not in homes and not i.hidden]
     if rows_to_remove:
         print("Removing", len(rows_to_remove), "homes", ", ".join(r[1] for r in rows_to_remove))
         hide_rows(sheet, [r[0] for r in rows_to_remove])
