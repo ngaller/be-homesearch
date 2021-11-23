@@ -7,6 +7,10 @@ name = "pypi"
 fake-useragent = "*"
 beautifulsoup4 = "*"
 requests = "*"
+google-api-python-client = "*"
+google-auth-httplib2 = "*"
+google-auth-oauthlib = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

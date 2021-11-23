@@ -6,3 +6,7 @@ rsconnect/
 Rentals in Belgium.xlsx
 pois.csv
 .idea/
+# created from google console
+credentials.json
+# generated from update_spreadsheet.py
+token.json

@@ -268,6 +268,7 @@ We can now write the results to a new spreadsheet:
 
 ```{r}
 write.xlsx(x = homes, file="homes_scored.xlsx")
+write.csv(x = homes, file="homes_scored.csv")
 ```
 
 Or plot it.  I used plotly to get an interactive chart where I could click on a dot to visit the relevant page,
