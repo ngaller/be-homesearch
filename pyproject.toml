@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "localize_be"
+version = "0.1.0"
+description = ""
+authors = ["Nicolas Galler <ngaller@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-dotenv = "^0.19.2"
+fake-useragent = "*"
+beautifulsoup4 = "*"
+requests = "*"
+google-api-python-client = "*"
+google-auth-httplib2 = "*"
+google-auth-oauthlib = "*"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
