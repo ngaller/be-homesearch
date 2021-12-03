@@ -21,16 +21,18 @@ class HomeCache:
     def close(self):
         self.con.close()
 
-    def add_home(self, data, details):
+    def add_home(self, data, details, synced=False):
         """
         Add a home to the cache.  If it is already there, update the data and set the synced flag to 0.
         """
         with closing(self.con.cursor()) as cur:
             cur.execute("""
-            insert into homes (id, city, postal_code, price, details)
-            values (:id, :city, :postal_code, :price, :details) 
-            on conflict do update set price=excluded.price, details=excluded.details, synced=0
-            """, dict(**data, details=json.dumps(details)))
+            insert into homes (id, city, postal_code, price, details, synced)
+            values (:id, :city, :postal_code, :price, :details, :synced) 
+            on conflict do update set price=excluded.price, details=excluded.details, synced=:synced
+            """, dict(details=json.dumps(details),
+                      synced=1 if synced else 0,
+                      **data))
             self.con.commit()
 
     def update_home(self, id_, details):
@@ -51,7 +53,8 @@ class HomeCache:
 
     def has_home(self, id_, price):
         with closing(self.con.cursor()) as cur:
-            cur.execute("select id from homes where id=? and price=?", (id_, price))
+            # TODO we should have some way to update the ones that have a modified price...
+            cur.execute("select id from homes where id=?", (id_,))
             return cur.fetchall()
 
     def get_homes_to_sync(self):
@@ -61,8 +64,13 @@ class HomeCache:
 
     def get_homes_to_geocode(self):
         with closing(self.con.cursor()) as cur:
-            cur.execute("select id, details from homes where geocoded=0")
+            cur.execute("select id, details from homes where synced=0 and geocoded=0")
             return [(row[0], json.loads(row[1])) for row in cur.fetchall()]
+
+    def get_synced_ids(self):
+        with closing(self.con.cursor()) as cur:
+            cur.execute("select id from homes where synced=1")
+            return [row[0] for row in cur.fetchall()]
 
 
 @resource(config_schema={"path": str})

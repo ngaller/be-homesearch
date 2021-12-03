@@ -15,4 +15,4 @@ def update_homes():
     pois = get_pois.get_pois()
     scoring = score_homes.score_all(pois, start=geocoding)
     sync.sync_new(start=scoring)
-    sync.filter_old(search)
+    sync.filter_old(collect_homes.get_old_homes(search))

@@ -1,0 +1,4 @@
+resources:
+  home_cache:
+    config:
+      path: home_cache.db

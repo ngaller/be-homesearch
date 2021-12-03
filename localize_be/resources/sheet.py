@@ -2,6 +2,8 @@
 Wrapper for Google API to update the spreadsheet
 """
 import os
+import os.path
+from typing import List
 
 from dagster import resource, StringSource
 
@@ -14,7 +16,7 @@ from google.oauth2.credentials import Credentials
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 
-def build_service():
+def build_service(conf_dir):
     """
     Retrieve reference to Google spreadsheet service, initializing the authentication tokens if they are not
     present or need to be refreshed
@@ -23,18 +25,20 @@ def build_service():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    token_json = os.path.join(conf_dir, "token.json")
+    credentials_json = os.path.join(conf_dir, "credentials.json")
+    if os.path.exists(token_json):
+        creds = Credentials.from_authorized_user_file(token_json, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                credentials_json, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open(token_json, 'w') as token:
             token.write(creds.to_json())
 
     service = build('sheets', 'v4', credentials=creds)
@@ -44,8 +48,8 @@ def build_service():
 
 
 class Sheet:
-    def __init__(self, spreadsheet_id, spreadsheet_gid):
-        self.sheets = build_service()
+    def __init__(self, spreadsheet_id, spreadsheet_gid, conf_dir="."):
+        self.sheets = build_service(conf_dir)
         self.sheet_id = spreadsheet_id
         self.sheet_gid = spreadsheet_gid
 
@@ -54,6 +58,23 @@ class Sheet:
                                           range="Houses!A1:ZZ1").execute()
         values = result.get('values', [])
         return values[0]
+
+    def get_homes(self):
+        request = self.sheets.get(spreadsheetId=self.sheet_id,
+                                  ranges=["Houses!A2:D"],
+                                  includeGridData=True).execute()
+        sheet_data = request["sheets"][0]["data"][0]
+        result = []
+        for i, (data, metadata) in enumerate(zip(sheet_data["rowData"], sheet_data["rowMetadata"])):
+            row_values = [rv["formattedValue"]
+                          for rv in data["values"]]
+            result.append((i, {
+                "id": int(row_values[0]),
+                "postal_code": row_values[1],
+                "price": int(row_values[2]),
+                "city": row_values[3],
+            }))
+        return result
 
     def add_homes(self, homes):
         for home in homes:
@@ -98,8 +119,41 @@ class Sheet:
                 ]
             }).execute()
 
-    def set_home_filter(self):
-        pass
+    def set_home_filter(self, exclude_ids: List[int]):
+        self.sheets.batchUpdate(
+            spreadsheetId=self.sheet_id,
+            body={
+                "requests": [
+                    {
+                        "setBasicFilter": {
+                            "filter": {
+                                "range": {
+                                    "sheetId": self.sheet_gid,
+                                    "startColumnIndex": 0,
+                                    "endColumnIndex": 1
+                                },
+                                "filterSpecs": [
+                                    {
+                                        "columnIndex": 0,
+                                        "filterCriteria": {
+                                            # "condition": {
+                                            #     "type": "ONE_OF_LIST",
+                                            #     "values": [
+                                            #         {
+                                            #             "userEnteredValue": "9477738"
+                                            #         }
+                                            #     ]
+                                            # }
+                                            "hiddenValues": list(map(str, exclude_ids))
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        ).execute()
 
 
 @resource(config_schema={"spreadsheet_id": StringSource, "spreadsheet_gid": StringSource})

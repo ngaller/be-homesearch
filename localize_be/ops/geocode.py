@@ -10,6 +10,7 @@ def geocode_homes(context):
     home_cache: HomeCache = context.resources.home_cache
     homes = home_cache.get_homes_to_geocode()
     for id_, home in homes:
+        print(home)
         home["Lat"], home["Lng"] = mapquest.geocode(f"{home['Street']}, {home['City']}")
         home_cache.update_home(id_, home)
         home_cache.set_geocoded(id_)

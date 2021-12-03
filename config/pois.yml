@@ -1,0 +1,9 @@
+ops:
+  get_pois:
+    config:
+      path: pois.csv
+resources:
+  mapquest:
+    config:
+      api_key:
+        env: MAPQUEST_API_KEY

@@ -14,11 +14,11 @@ from fake_useragent import UserAgent
 BASE = "https://www.immoweb.be/fr"
 SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&maxSurface=350&minLandSurface=600&maxLandSurface=5000&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=460000&orderBy=newest"
 HOME = "https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
-MAX_SEARCH_PAGES = 1
+MAX_SEARCH_PAGES = 5
 
 
 class ImmowebAPI:
-    def __init__(self, get_delay_range=(10, 25)):
+    def __init__(self, get_delay_range=(3, 10)):
         self.get_delay_range = get_delay_range
         self.session = requests.Session()
         ua = UserAgent()
@@ -34,11 +34,14 @@ class ImmowebAPI:
             results = search.find('iw-search').attrs[':results']
             results = json.loads(results)
             for home in results:
+                price = home["price"]["mainValue"] or home["price"]["maxRangeValue"]
+                if not price:
+                    continue
                 yield {
                     "id": int(home["id"]),
                     "city": home["property"]["location"]["locality"],
-                    "postal_code": home["property"]["location"]["postalCode"],
-                    "price": home["price"]["mainValue"],
+                    "postal_code": str(home["property"]["location"]["postalCode"]),
+                    "price": price,
                 }
 
     def get_home(self, id, locality, postal_code):
