@@ -49,8 +49,8 @@ def calculate_score(details: Dict, pois: pd.DataFrame):
     """
     details["dist.Total"] = _distance_average(details, pois)
     details["dist.Score"] = _distance_score_predictor().predict([[details["dist.Total"]]])[0]
-    details["size.Score"] = _size_score_predictor().predict([[details["SqMeter"]]])[0]
-    bedrooms = details["Bedrooms"]
+    details["size.Score"] = _size_score_predictor().predict([[details["SqMeter"]]])[0] if details["SqMeter"] else 0
+    bedrooms = details["Bedrooms"] or 3
     if details["Office"] == "Yes":
         bedrooms += 1
     bedroom_score = _bedroom_score_predictor().predict([[bedrooms]])[0]
