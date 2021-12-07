@@ -12,7 +12,7 @@ from dagster import resource
 from fake_useragent import UserAgent
 
 BASE = "https://www.immoweb.be/fr"
-SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&maxSurface=350&minLandSurface=600&maxLandSurface=5000&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=460000&orderBy=newest"
+SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&maxSurface=350&maxLandSurface=5000&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=460000&orderBy=newest"
 HOME = "https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
 MAX_SEARCH_PAGES = 5
 
@@ -62,10 +62,11 @@ class ImmowebAPI:
         ad = json.loads(data)
         prop_data = ad['property']
         location = prop_data['location']
+        price = ad["price"]["mainValue"] or ad["price"]["maxRangeValue"]
         return {
             'Code #': ad['id'],
             'Postal code': prop_data['location']['postalCode'],
-            'Price': ad['price']['mainValue'],
+            'Price': price,
             'City': locality,
             'Street': '{} {}'.format(location['street'], location['number'] or '') if location['street'] else '',
             'SqMeter': prop_data['netHabitableSurface'],
