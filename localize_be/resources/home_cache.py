@@ -29,7 +29,7 @@ class HomeCache:
             cur.execute("""
             insert into homes (id, city, postal_code, price, details, synced)
             values (:id, :city, :postal_code, :price, :details, :synced) 
-            on conflict do update set price=excluded.price, details=excluded.details, synced=:synced
+            on conflict(id) do update set price=excluded.price, details=excluded.details, synced=:synced
             """, dict(details=json.dumps(details),
                       synced=1 if synced else 0,
                       **data))

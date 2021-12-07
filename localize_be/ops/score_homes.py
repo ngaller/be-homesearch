@@ -1,7 +1,7 @@
 import pandas as pd
 from dagster import op, OpExecutionContext, In, Nothing
 
-from localize_be.scoring import calculate_score
+from localize_be.core.scoring import calculate_score
 
 
 @op(required_resource_keys={"home_cache"}, ins={"start": In(Nothing)})

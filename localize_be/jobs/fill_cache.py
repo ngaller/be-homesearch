@@ -7,4 +7,4 @@ from localize_be.resources.sheet import sheet
 
 @job(resource_defs={"home_cache": home_cache, "sheet": sheet})
 def fill_cache():
-    fill_cache.fill_cache(fill_cache.get_homes())
+    fill_cache.add_to_cache(fill_cache.get_homes())

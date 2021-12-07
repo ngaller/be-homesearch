@@ -8,7 +8,7 @@ from localize_be.ops.models.dataframes import HomeSearchDataframe
 
 
 @op(required_resource_keys={"home_cache"})
-def fill_cache(context, homes: pd.DataFrame):
+def add_to_cache(context, homes: pd.DataFrame):
     for _, h in homes.iterrows():
         context.resources.home_cache.add_home(h.to_dict(), details={}, synced=True)
 

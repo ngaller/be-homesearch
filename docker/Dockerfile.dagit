@@ -1,0 +1,24 @@
+FROM python:3.9-slim
+
+RUN useradd -ms /bin/bash dagster
+RUN mkdir -p /opt/dagster/dagster_home/cache /opt/dagster/app
+RUN chown -R dagster:dagster /opt/dagster/dagster_home
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+ENV CACHE_PATH=/opt/dagster/dagster_home/cache/home_cache.db
+
+RUN pip install dagit~=0.13.10
+COPY requirements.txt /opt/dagster/app/
+RUN pip install -r /opt/dagster/app/requirements.txt
+COPY docker/workspace.yaml credentials.json /opt/dagster/app/
+COPY --chown=dagster:dagster pois.csv token.json /opt/dagster/app/
+COPY localize_be /opt/dagster/app/localize_be/
+COPY docker/dagster.yaml /opt/dagster/dagster_home/
+
+WORKDIR /opt/dagster/app
+
+EXPOSE 3000
+USER dagster
+VOLUME ["/opt/dagster/dagster_home"]
+
+ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000"]

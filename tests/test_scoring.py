@@ -1,6 +1,6 @@
 import pandas as pd
 
-from localize_be import scoring
+from localize_be.core import scoring
 
 
 def test_calculate_distance():
