@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  dagit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dagit
+    ports:
+      - 3000:3000
+    volumes:
+      - dagster_data:/opt/dagster/dagster_home
+volumes:
+  dagster_data:

@@ -11,3 +11,4 @@ pois.csv
 credentials.json
 # generated from update_spreadsheet.py
 token.json
+requirements.txt

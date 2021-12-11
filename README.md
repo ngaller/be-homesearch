@@ -26,9 +26,8 @@ Docker configuration in `docker` folder:
 
 - Dockerfile.dagit: code container, runs the dagit interface
 
-Right now you have to first generate the requirements.txt:
-
-    poetry export --without-hashes > requirements.txt
-
-And make sure that the version of dagit in the Dockerfile matches the 
+Make sure that the version of dagit in the Dockerfile matches the 
 version of dagster in pyproject.toml.
+The configuration has to be supplied manually in the launchpad.  I'm not
+sure that it brings anything to use dagster resource configuration for this,
+maybe we should just use environment variables.
