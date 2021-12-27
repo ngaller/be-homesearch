@@ -21,6 +21,6 @@ def test_get_home(mock_get, ad):
         type(content).content = PropertyMock(return_value=f.read())
         mock_get.return_value = content
     iw = ImmowebAPI(get_delay_range=(0, 1))
-    home = iw.get_home(444, name, 6990)
+    home = iw.get_home(444, "Home", name, 6990)
     for k, v in data_to_check.items():
         assert home[k] == v

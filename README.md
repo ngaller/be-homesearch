@@ -31,3 +31,10 @@ version of dagster in pyproject.toml.
 The configuration has to be supplied manually in the launchpad.  I'm not
 sure that it brings anything to use dagster resource configuration for this,
 maybe we should just use environment variables.
+
+There are 2 jobs:
+
+- fill_cache is used to initialize the home_cache db using the values from 
+  the spreadsheet
+- update_homes searches immoweb and updates the spreadsheet with the homes
+  that are missing from the cache

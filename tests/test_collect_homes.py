@@ -13,7 +13,7 @@ from localize_be.ops.collect_homes import search_homes, get_new_homes, get_old_h
 #     assert int(df.loc[9627018].Price) == 299000
 from localize_be.resources.home_cache import HomeCache
 
-SAMPLE_HOME = {"id": 9627018, "city": "Lasnes", "postal_code": "1300", "price": 400000}
+SAMPLE_HOME = {"id": 9627018, "property_type": "Home", "city": "Lasnes", "postal_code": "1300", "price": 400000}
 
 
 def test_search_homes():
@@ -52,9 +52,9 @@ def test_get_new_homes():
     result = list(get_new_homes(context, df_search))
     assert isinstance(result[0], AssetMaterialization)
     assert isinstance(result[1], Output)
-    assert result[1].value == 1
+    assert result[1].value == 1, "Should find only one new home, since SAMPLE_HOME was already in cache"
     local_cache.set_geocoded(111)
-    assert len(local_cache.get_homes_to_sync()) == 1
+    assert len(local_cache.get_homes_to_sync()) == 1, "Only new home should be set to sync"
 
 
 def test_get_old_homes():

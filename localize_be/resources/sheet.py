@@ -61,7 +61,7 @@ class Sheet:
 
     def get_homes(self):
         request = self.sheets.get(spreadsheetId=self.sheet_id,
-                                  ranges=["Houses!A2:D"],
+                                  ranges=["Houses!A2:E"],
                                   includeGridData=True).execute()
         sheet_data = request["sheets"][0]["data"][0]
         result = []
@@ -73,6 +73,7 @@ class Sheet:
                 "postal_code": row_values[1],
                 "price": int(row_values[2]),
                 "city": row_values[3],
+                "property_type": row_values[4],
             }))
         return result
 

@@ -2,6 +2,8 @@
 Wrapper for Immoweb scraping
 """
 import re
+from dataclasses import dataclass
+
 import requests
 import random
 import time
@@ -12,9 +14,25 @@ from dagster import resource
 from fake_useragent import UserAgent
 
 BASE = "https://www.immoweb.be/fr"
-SEARCH = "https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE&minSurface=150&maxSurface=350&maxLandSurface=5000&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE&maxPrice=460000&orderBy=newest"
-HOME = "https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
 MAX_SEARCH_PAGES = 5
+
+
+@dataclass
+class SearchConfig:
+    search_url: str
+    home_url: str
+
+
+SEARCHES = {
+    "Home": SearchConfig(
+        search_url="https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE"
+                   "&minSurface=150&maxSurface=350&maxLandSurface=5000"
+                   "&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310"
+                   "&transactionTypes=FOR_SALE&minPrice=200000&priceType=PRICE&minBedroomCount=3&countries=BE"
+                   "&maxPrice=460000&orderBy=newest",
+        home_url="https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
+    ),
+}
 
 
 class ImmowebAPI:
@@ -25,46 +43,50 @@ class ImmowebAPI:
         self.session.headers['User-Agent'] = ua.random
 
     def search_homes(self):
-        for page in range(1, MAX_SEARCH_PAGES + 1):
-            url = SEARCH
-            if page > 1:
-                url += '&page={}'.format(page)
-            search = self._download(url)
-            # the data is in a JSON
-            results = search.find('iw-search').attrs[':results']
-            results = json.loads(results)
-            for home in results:
-                price = home["price"]["mainValue"] or home["price"]["maxRangeValue"]
-                if not price:
-                    continue
-                yield {
-                    "id": int(home["id"]),
-                    "city": home["property"]["location"]["locality"],
-                    "postal_code": str(home["property"]["location"]["postalCode"]),
-                    "price": price,
-                }
+        for property_type, search in SEARCHES.items():
+            for page in range(1, MAX_SEARCH_PAGES + 1):
+                url = search.search_url
+                if page > 1:
+                    url += '&page={}'.format(page)
+                search = self._download(url)
+                # the data is in a JSON
+                results = search.find('iw-search').attrs[':results']
+                results = json.loads(results)
+                for home in results:
+                    price = home["price"]["mainValue"] or home["price"]["maxRangeValue"]
+                    if not price:
+                        continue
+                    yield {
+                        "id": int(home["id"]),
+                        "city": home["property"]["location"]["locality"],
+                        "postal_code": str(home["property"]["location"]["postalCode"]),
+                        "price": price,
+                        "property_type": property_type,
+                    }
 
-    def get_home(self, id, locality, postal_code):
+    def get_home(self, id_, property_type, locality, postal_code):
         # https://www.immoweb.be/fr/annonce/maison/a-louer/mont-st-guibert/1435/8736394?searchId=5ecb8fc950a33
-        print('Getting home', id)
-        url = HOME.format(
+        print('Getting home', id_)
+        url = SEARCHES[property_type].home_url.format(
             re.sub('[^a-z]', '-', locality.lower()),
             postal_code,
-            id)
+            id_)
         soup = self._download(url)
         data = soup.find('script', string=re.compile("^\\s*window.classified = "))
         if not data:
             raise Exception("Could not find classified in document")
-        data = data.contents[0]
-        data = re.sub('^\\s*window.classified = ', '', data)
-        data = re.sub(';\\s*$', '', data)
+        script_content = data.contents[0]
+        assert isinstance(script_content, str)
+        script_content = re.sub('^\\s*window.classified = ', '', script_content)
+        script_content = re.sub(';\\s*$', '', script_content)
         # the data is in a JSON in "classified"
-        ad = json.loads(data)
+        ad = json.loads(script_content)
         prop_data = ad['property']
         location = prop_data['location']
         price = ad["price"]["mainValue"] or ad["price"]["maxRangeValue"]
         return {
             'Code #': ad['id'],
+            'Type': property_type,
             'Postal code': prop_data['location']['postalCode'],
             'Price': price,
             'City': locality,
