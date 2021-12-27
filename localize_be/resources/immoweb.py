@@ -32,6 +32,12 @@ SEARCHES = {
                    "&maxPrice=460000&orderBy=newest",
         home_url="https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
     ),
+    "Land": SearchConfig(
+        search_url="https://www.immoweb.be/fr/recherche/terrain-a-batir/a-vendre?"
+                   "countries=BE&maxLandSurface=5000&maxPrice=180000&minLandSurface=800&minPrice=50000&"
+                   "postalCodes=BE-5081,1315,1357,1360,1370,5031,5310&priceType=PRICE&orderBy=newest",
+        home_url="https://www.immoweb.be/fr/annonce/terrain-a-batir/a-vendre/{}/{}/{}"
+    )
 }
 
 
@@ -48,9 +54,9 @@ class ImmowebAPI:
                 url = search.search_url
                 if page > 1:
                     url += '&page={}'.format(page)
-                search = self._download(url)
+                search_page = self._download(url)
                 # the data is in a JSON
-                results = search.find('iw-search').attrs[':results']
+                results = search_page.find('iw-search').attrs[':results']
                 results = json.loads(results)
                 for home in results:
                     price = home["price"]["mainValue"] or home["price"]["maxRangeValue"]

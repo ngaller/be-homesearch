@@ -20,7 +20,8 @@ def test_get_homes(svc):
         "id": 9477738,
         "postal_code": "1360",
         "price": 450000,
-        "city": "Perwez"
+        "city": "Perwez",
+        "property_type": "Home"
     })
 
 

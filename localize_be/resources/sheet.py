@@ -60,20 +60,18 @@ class Sheet:
         return values[0]
 
     def get_homes(self):
-        request = self.sheets.get(spreadsheetId=self.sheet_id,
-                                  ranges=["Houses!A2:E"],
-                                  includeGridData=True).execute()
-        sheet_data = request["sheets"][0]["data"][0]
+        request = self.sheets.values().get(
+            spreadsheetId=self.sheet_id,
+            range="Houses!A2:E",
+        ).execute()
         result = []
-        for i, (data, metadata) in enumerate(zip(sheet_data["rowData"], sheet_data["rowMetadata"])):
-            row_values = [rv["formattedValue"]
-                          for rv in data["values"]]
+        for i, row_values in enumerate(request['values']):
             result.append((i, {
                 "id": int(row_values[0]),
                 "postal_code": row_values[1],
                 "price": int(row_values[2]),
                 "city": row_values[3],
-                "property_type": row_values[4],
+                "property_type": row_values[4] if len(row_values) > 4 else None,
             }))
         return result
 

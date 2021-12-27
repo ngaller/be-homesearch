@@ -24,3 +24,21 @@ def test_get_home(mock_get, ad):
     home = iw.get_home(444, "Home", name, 6990)
     for k, v in data_to_check.items():
         assert home[k] == v
+
+
+@patch.object(Session, 'get')
+def test_search_homes(mock_get):
+    with open("./samples/iw_search.html") as f:
+        content = MagicMock()
+        type(content).content = PropertyMock(return_value=f.read())
+        mock_get.return_value = content
+    iw = ImmowebAPI(get_delay_range=(0, 1))
+    homes = list(iw.search_homes())
+    assert len(homes) > 4
+    assert homes[0] == {
+        "id": 9611263,
+        "city": "Perwez",
+        "postal_code": "1360",
+        "price": 360000,
+        "property_type": "Home"
+    }
