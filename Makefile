@@ -7,6 +7,9 @@ build: requirements.txt
 up: build
 	docker-compose up -d
 
+down:
+	docker-compose down
+
 test:
 	poetry run pytest
 
