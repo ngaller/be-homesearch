@@ -5,8 +5,6 @@ import os
 import os.path
 from typing import List
 
-from dagster import resource, StringSource
-
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -153,8 +151,3 @@ class Sheet:
                 ]
             }
         ).execute()
-
-
-@resource(config_schema={"spreadsheet_id": StringSource, "spreadsheet_gid": StringSource})
-def sheet(context):
-    return Sheet(context.resource_config["spreadsheet_id"], context.resource_config["spreadsheet_gid"])

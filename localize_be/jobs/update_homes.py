@@ -1,6 +1,6 @@
 from dagster import job
 
-from localize_be.ops import collect_homes, score_homes, sync, get_pois, geocode
+from localize_be.tasks import collect_homes, score_homes, sync, get_pois, geocode
 from localize_be.resources.home_cache import home_cache
 from localize_be.resources.immoweb import immoweb
 from localize_be.resources.mapquest import mapquest

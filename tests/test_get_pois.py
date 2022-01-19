@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from dagster import build_op_context
 
-from localize_be.ops.get_pois import get_pois
+from localize_be.tasks.get_pois import get_pois
 
 
 def test_do_geocode():

@@ -2,8 +2,6 @@ import json
 import sqlite3
 from contextlib import closing
 
-from dagster import InitResourceContext, resource
-
 
 class HomeCache:
     def __init__(self, path):
@@ -73,9 +71,3 @@ class HomeCache:
         with closing(self.con.cursor()) as cur:
             cur.execute("select id from homes where synced=1")
             return [row[0] for row in cur.fetchall()]
-
-
-@resource(config_schema={"path": str})
-def home_cache(init_context: InitResourceContext):
-    db = HomeCache(init_context.resource_config["path"])
-    return db

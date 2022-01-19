@@ -3,7 +3,7 @@ from typing import List
 from dagster import op, AssetMaterialization, Output, Out
 import pandas as pd
 
-from localize_be.ops.models.dataframes import HomeSearchDataframe
+from localize_be.tasks.models.dataframes import HomeSearchDataframe
 
 
 @op(required_resource_keys={"immoweb"}, out=Out(HomeSearchDataframe))
