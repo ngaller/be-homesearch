@@ -2,7 +2,7 @@ import json
 import sqlite3
 from contextlib import closing
 
-from dagster import InitResourceContext, resource
+from localize_be.config import config
 
 
 class HomeCache:
@@ -75,7 +75,6 @@ class HomeCache:
             return [row[0] for row in cur.fetchall()]
 
 
-@resource(config_schema={"path": str})
-def home_cache(init_context: InitResourceContext):
-    db = HomeCache(init_context.resource_config["path"])
+def home_cache():
+    db = HomeCache(config["HOME_CACHE"]["PATH"])
     return db
