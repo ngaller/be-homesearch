@@ -1,7 +1,8 @@
 from typing import Tuple
 
 import requests
-from dagster import resource, InitResourceContext, StringSource
+
+from localize_be.config import config
 
 COUNTRY = "Belgium"
 
@@ -25,7 +26,6 @@ class Mapquest:
         return loc["lat"], loc["lng"]
 
 
-@resource(config_schema={"api_key": StringSource})
-def mapquest(init_context: InitResourceContext):
-    svc = Mapquest(init_context.resource_config["api_key"])
+def get_mapquest():
+    svc = Mapquest(config["MAPQUEST"]["API_KEY"])
     return svc

@@ -49,7 +49,9 @@ def build_service(conf_dir):
 
 class Sheet:
     def __init__(self, spreadsheet_id, spreadsheet_gid, conf_dir="."):
+        print("BUILDING SERVICE")
         self.sheets = build_service(conf_dir)
+        print("DONE")
         self.sheet_id = spreadsheet_id
         self.sheet_gid = spreadsheet_gid
 
@@ -155,5 +157,5 @@ class Sheet:
         ).execute()
 
 
-def sheet():
+def get_sheet():
     return Sheet(config["SHEET"]["SPREADSHEET_ID"], config["SHEET"]["SPREADSHEET_GID"])

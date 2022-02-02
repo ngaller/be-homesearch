@@ -75,6 +75,6 @@ class HomeCache:
             return [row[0] for row in cur.fetchall()]
 
 
-def home_cache():
+def get_home_cache():
     db = HomeCache(config["HOME_CACHE"]["PATH"])
     return db

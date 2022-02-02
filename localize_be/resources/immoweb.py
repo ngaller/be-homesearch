@@ -10,7 +10,6 @@ import time
 import json
 
 from bs4 import BeautifulSoup
-from dagster import resource
 from fake_useragent import UserAgent
 
 BASE = "https://www.immoweb.be/fr"
@@ -120,6 +119,5 @@ class ImmowebAPI:
         return soup
 
 
-@resource
-def immoweb(init_context):
+def get_immoweb():
     return ImmowebAPI()

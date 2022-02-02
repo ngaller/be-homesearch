@@ -1,7 +1,7 @@
-requirements.txt: poetry.lock
-	poetry export --without-hashes > requirements.txt
+install: pyproject.toml
+	poetry install
 
-build: requirements.txt
+build: docker-compose.yaml
 	docker-compose build
 
 up: build
@@ -10,8 +10,9 @@ up: build
 down:
 	docker-compose down
 
-test:
-	poetry run pytest
+register:
+	PYTHONPATH=. poetry run prefect register --project localize_be --module localize_be.flows.fill_cache.flow
+	PYTHONPATH=. poetry run prefect register --project localize_be --module localize_be.flows.update_homes.flow
 
 #refresh:
 #	touch .refresh

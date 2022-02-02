@@ -1,13 +1,19 @@
 version: '3.7'
 
 services:
-  dagit:
+  prefect:
     build:
       context: .
-      dockerfile: docker/Dockerfile.dagit
-    ports:
-      - 3000:3000
+      dockerfile: docker/Dockerfile
+    environment:
+      - PREFECT_API_KEY=${PREFECT_API_KEY}
+      - MAPQUEST__API_KEY=${MAPQUEST_API_KEY}
+      - SHEET__SPREADSHEET_ID=${SHEET__SPREADSHEET_ID}
+      - SHEET__SPREADSHEET_GID=${SHEET__SPREADSHEET_GID}
+      - PREFECT__LOGGING__LEVEL=DEBUG
     volumes:
-      - dagster_data:/opt/dagster/dagster_home
+      - ./credentials.json:/agent/credentials.json:rw
+      - ./pois.csv:/agent/pois.csv:rw
+      - ./home_cache.db:/agent/home_cache.db:rw
 volumes:
   dagster_data:

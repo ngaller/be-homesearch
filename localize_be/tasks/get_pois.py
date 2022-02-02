@@ -3,15 +3,16 @@ Collect pois from the pois.csv file and geocode them.
 """
 import numpy as np
 import pandas as pd
-from dagster import op
+from prefect import task
 
-from localize_be.resources.mapquest import Mapquest
+from localize_be.config import config
+from localize_be.resources.mapquest import get_mapquest
 
 
-@op(required_resource_keys={"mapquest"}, config_schema={"path": str})
-def get_pois(context) -> pd.DataFrame:
-    path = context.op_config["path"]
-    mapquest: Mapquest = context.resources.mapquest
+@task()
+def get_pois() -> pd.DataFrame:
+    path = config["POIS"]["PATH"]
+    mapquest = get_mapquest()
     df = pd.read_csv(path, sep=";")
     if "Lat" not in df.columns:
         df["Lat"], df["Lng"] = np.nan, np.nan

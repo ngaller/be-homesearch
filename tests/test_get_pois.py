@@ -1,9 +1,7 @@
 import tempfile
 from unittest.mock import MagicMock
 
-from dagster import build_op_context
-
-from localize_be.ops.get_pois import get_pois
+from localize_be.tasks.get_pois import get_pois
 
 
 def test_do_geocode():
@@ -18,6 +16,7 @@ def test_do_geocode():
         }, op_config={
             "path": f.name
         })
+        with patch("")
         pois = get_pois(context)
         assert len(pois) == 1
         assert pois.iloc[0].Category == "School"

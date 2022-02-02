@@ -9,5 +9,11 @@ config = {
     "SHEET": {
         "SPREADSHEET_ID": environ.get("SHEET__SPREADSHEET_ID"),
         "SPREADSHEET_GID": environ.get("SHEET__SPREADSHEET_GID"),
+    },
+    "MAPQUEST": {
+        "API_KEY": environ.get("MAPQUEST__API_KEY")
+    },
+    "POIS": {
+        "PATH": environ.get("POIS__PATH") or "pois.csv"
     }
 }

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 from dagster import build_op_context, AssetMaterialization, Output
 
-from localize_be.ops.collect_homes import search_homes, get_new_homes, get_old_homes
+from localize_be.tasks.collect_homes import search_homes, get_new_homes, get_old_homes
 
 # def test_read_existing():
 #     context = build_op_context(op_config={"path": "samples/homes.csv"})
