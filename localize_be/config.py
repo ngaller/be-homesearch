@@ -4,7 +4,7 @@ from os import environ
 load_dotenv()
 config = {
     "HOME_CACHE": {
-        "PATH": environ.get("HOME_CACHE__PATH") or "home_cache.db"
+        "PATH": environ.get("HOME_CACHE__PATH") or "db/home_cache"
     },
     "SHEET": {
         "SPREADSHEET_ID": environ.get("SHEET__SPREADSHEET_ID"),

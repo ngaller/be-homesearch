@@ -1,5 +1,5 @@
 .env
-home_cache.db
+db/
 rsconnect/
 .Rhistory
 *.pyc

@@ -11,8 +11,9 @@ down:
 	docker-compose down
 
 register:
-	PYTHONPATH=. poetry run prefect register --project localize_be --module localize_be.flows.fill_cache.flow
-	PYTHONPATH=. poetry run prefect register --project localize_be --module localize_be.flows.update_homes.flow
+	PYTHONPATH=. poetry run prefect register --project localize_be \
+		--module localize_be.flows.fill_cache.flow \
+		--module localize_be.flows.update_homes.flow
 
 #refresh:
 #	touch .refresh

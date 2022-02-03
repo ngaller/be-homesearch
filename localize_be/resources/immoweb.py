@@ -9,6 +9,7 @@ import random
 import time
 import json
 
+from loguru import logger
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
@@ -50,6 +51,7 @@ class ImmowebAPI:
     def search_homes(self):
         for property_type, search in SEARCHES.items():
             for page in range(1, MAX_SEARCH_PAGES + 1):
+                logger.debug(f"search {property_type}: retrieving page {page}")
                 url = search.search_url
                 if page > 1:
                     url += '&page={}'.format(page)
@@ -71,7 +73,7 @@ class ImmowebAPI:
 
     def get_home(self, id_, property_type, locality, postal_code):
         # https://www.immoweb.be/fr/annonce/maison/a-louer/mont-st-guibert/1435/8736394?searchId=5ecb8fc950a33
-        print('Getting home', id_)
+        logger.debug(f'Getting home {id_}')
         url = SEARCHES[property_type].home_url.format(
             re.sub('[^a-z]', '-', locality.lower()),
             postal_code,

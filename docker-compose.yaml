@@ -5,15 +5,13 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    init: true
+    env_file:
+      - .env
     environment:
-      - PREFECT_API_KEY=${PREFECT_API_KEY}
-      - MAPQUEST__API_KEY=${MAPQUEST_API_KEY}
-      - SHEET__SPREADSHEET_ID=${SHEET__SPREADSHEET_ID}
-      - SHEET__SPREADSHEET_GID=${SHEET__SPREADSHEET_GID}
-      - PREFECT__LOGGING__LEVEL=DEBUG
+      - PREFECT__LOGGING__EXTRA_LOGGERS="['localize_be']"
     volumes:
       - ./credentials.json:/agent/credentials.json:rw
+      - ./token.json:/agent/token.json:rw
       - ./pois.csv:/agent/pois.csv:rw
-      - ./home_cache.db:/agent/home_cache.db:rw
-volumes:
-  dagster_data:
+      - ./db:/agent/db:rw

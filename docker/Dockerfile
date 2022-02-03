@@ -8,5 +8,4 @@ RUN pip install poetry==1.1.12 --no-warn-script-location
 COPY pyproject.toml poetry.lock ./
 RUN ~/.local/bin/poetry install
 COPY localize_be/ /agent/localize_be/
-USER agent
-CMD ~/.local/bin/poetry run prefect agent local start --no-hostname-label -k $PREFECT_API_KEY
+CMD ~/.local/bin/poetry run prefect agent local start --no-hostname-label
