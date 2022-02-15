@@ -9,7 +9,7 @@ import random
 import time
 import json
 
-from loguru import logger
+from localize_be.config import logger
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 

@@ -1,5 +1,9 @@
 from dotenv import load_dotenv
 from os import environ
+import logging
+
+logger = logging.getLogger("localize_be")
+logger.setLevel(logging.DEBUG)
 
 load_dotenv()
 config = {
