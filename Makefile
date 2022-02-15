@@ -1,13 +1,28 @@
-all: refresh gsheet
+install: pyproject.toml
+	poetry install
 
-refresh:
-	touch .refresh
+build: docker-compose.yaml
+	docker-compose build
 
-homes.csv: .refresh
-	pipenv run python gather_homes.py homes.csv
+up: build
+	docker-compose up -d
 
-homes_scored.csv: home_search.rmd homes.csv
-	RSTUDIO_PANDOC=/usr/lib/rstudio/bin/pandoc Rscript -e "rmarkdown::render('home_search.rmd')"
+down:
+	docker-compose down
 
-gsheet: homes_scored.csv
-	pipenv run python update_spreadsheet.py homes_scored.csv
+register:
+	PYTHONPATH=. poetry run prefect register --project localize_be \
+		--module localize_be.flows.fill_cache.flow \
+		--module localize_be.flows.update_homes.flow
+
+#refresh:
+#	touch .refresh
+#
+#homes.csv: .refresh
+#	pipenv run python gather_homes.py homes.csv
+#
+#homes_scored.csv: home_search.rmd homes.csv
+#	RSTUDIO_PANDOC=/usr/lib/rstudio/bin/pandoc Rscript -e "rmarkdown::render('home_search.rmd')"
+#
+#gsheet: homes_scored.csv
+#	pipenv run python update_spreadsheet.py homes_scored.csv

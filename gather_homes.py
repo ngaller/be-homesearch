@@ -38,6 +38,7 @@ class API:
         results = search.find('iw-search').attrs[':results']
         results = json.loads(results)
         # id
+        # price
         # property:
         #   type
         #   subtype

@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  prefect:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    init: true
+    env_file:
+      - .env
+    environment:
+      - PREFECT__LOGGING__EXTRA_LOGGERS="['localize_be']"
+    volumes:
+      - ./credentials.json:/agent/credentials.json:rw
+      - ./token.json:/agent/token.json:rw
+      - ./pois.csv:/agent/pois.csv:rw
+      - ./db:/agent/db:rw
