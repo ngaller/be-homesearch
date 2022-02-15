@@ -1,5 +1,0 @@
-load_from:
-  # References the file copied into your Dockerfile
-  - python_file:
-      relative_path: localize_be/repo.py
-      # working_directory: localize_be/

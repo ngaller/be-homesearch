@@ -15,3 +15,4 @@ services:
       - ./token.json:/agent/token.json:rw
       - ./pois.csv:/agent/pois.csv:rw
       - ./db:/agent/db:rw
+    restart: unless-stopped
