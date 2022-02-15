@@ -29,7 +29,7 @@ def _bedroom_score_predictor():
     return reg
 
 
-def _distance_average(d: Dict, pois: pd.DataFrame):
+def _distance_pois(d: Dict, pois: pd.DataFrame) -> np.array:
     lat1 = radians(d["Lat"])
     lat2 = np.radians(pois.Lat)
     lng1 = radians(d["Lng"])
@@ -39,6 +39,10 @@ def _distance_average(d: Dict, pois: pd.DataFrame):
     a = np.sin(dlat / 2) ** 2 + cos(lat1) * np.cos(lat2) * np.sin(dlng / 2) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     distances = 6373.0 * c
+    return distances
+
+
+def _distance_average(distances: np.array, pois: pd.DataFrame):
     # distances = np.sqrt((d["Lat"] - pois.Lat) ** 2 + (d["Lng"] - pois.Lng) ** 2)
     return np.sum(distances * pois.Weight) / np.sum(pois.Weight)
 
@@ -47,7 +51,10 @@ def calculate_score(details: Dict, pois: pd.DataFrame):
     """
     Complete details with score fields
     """
-    details["dist.Total"] = _distance_average(details, pois)
+    distances = _distance_pois(details, pois)
+    for i, h in pois.iterrows():
+        details[f"dist.{h['Category']}"] = distances[0]
+    details["dist.Total"] = _distance_average(distances, pois)
     details["dist.Score"] = _distance_score_predictor().predict([[details["dist.Total"]]])[0]
     details["size.Score"] = _size_score_predictor().predict([[details["SqMeter"]]])[0] if details["SqMeter"] else 0
     bedrooms = details["Bedrooms"] or 3

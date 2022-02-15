@@ -1,7 +1,7 @@
-from unittest.mock import MagicMock
+import tempfile
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
-from dagster import build_op_context, AssetMaterialization, Output
 
 from localize_be.tasks.collect_homes import search_homes, get_new_homes, get_old_homes
 
@@ -21,10 +21,9 @@ def test_search_homes():
     mock_immo.search_homes.return_value = [
         SAMPLE_HOME
     ]
-    context = build_op_context(resources={
-        "immoweb": mock_immo
-    })
-    df = search_homes(context)
+    with patch("localize_be.tasks.collect_homes.get_immoweb") as get_immoweb:
+        get_immoweb.return_value = mock_immo
+        df = search_homes.run()
     assert df is not None
     df = df.set_index("id")
     assert df.loc[9627018] is not None
@@ -37,33 +36,32 @@ def test_get_new_homes():
         "Code #": 111,
         "Postal Code": "1233"
     }
-    local_cache = HomeCache(":memory:")
-    local_cache.add_home(SAMPLE_HOME, {}, synced=True)
-    local_cache.set_geocoded(SAMPLE_HOME["id"])
-    assert len(local_cache.get_homes_to_sync()) == 0
-    context = build_op_context(resources={
-        "immoweb": mock_immo,
-        "home_cache": local_cache
-    })
-    df_search = pd.DataFrame(data=[
-        SAMPLE_HOME,
-        {"id": 111, "city": "Lasnes", "postal_code": "1234", "price": 4444},
-    ])
-    result = list(get_new_homes(context, df_search))
-    assert isinstance(result[0], AssetMaterialization)
-    assert isinstance(result[1], Output)
-    assert result[1].value == 1, "Should find only one new home, since SAMPLE_HOME was already in cache"
-    local_cache.set_geocoded(111)
-    assert len(local_cache.get_homes_to_sync()) == 1, "Only new home should be set to sync"
+    with tempfile.NamedTemporaryFile() as f:
+        local_cache = HomeCache(f.name)
+        local_cache.add_home(SAMPLE_HOME, {}, synced=True)
+        local_cache.set_geocoded(SAMPLE_HOME["id"])
+        assert len(local_cache.get_homes_to_sync()) == 0
+        df_search = pd.DataFrame(data=[
+            SAMPLE_HOME,
+            {"id": 111, "city": "Lasnes", "postal_code": "1234", "price": 4444},
+        ])
+        with patch("localize_be.tasks.collect_homes.get_immoweb") as get_immoweb, patch(
+                "localize_be.tasks.collect_homes.get_home_cache") as get_cache:
+            get_immoweb.return_value = mock_immo
+            get_cache.return_value = local_cache
+            result = get_new_homes.run(df_search)
+        assert result == 1, "Should find only one new home, since SAMPLE_HOME was already in cache"
+        local_cache = HomeCache(f.name)
+        local_cache.set_geocoded(111)
+        assert len(local_cache.get_homes_to_sync()) == 1, "Only new home should be set to sync"
 
 
 def test_get_old_homes():
     local_cache = HomeCache(":memory:")
     local_cache.add_home(SAMPLE_HOME, {}, synced=True)
-    context = build_op_context(resources={
-        "home_cache": local_cache
-    })
     df_search = pd.DataFrame(data=[
         {"id": 111, "city": "Lasnes", "postal_code": "1234", "price": 4444},
     ])
-    assert get_old_homes(context, df_search) == [SAMPLE_HOME["id"]]
+    with patch("localize_be.tasks.collect_homes.get_home_cache") as get_cache:
+        get_cache.return_value = local_cache
+        assert get_old_homes.run(df_search) == [SAMPLE_HOME["id"]]

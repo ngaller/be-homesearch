@@ -10,8 +10,8 @@ from localize_be.resources.mapquest import get_mapquest
 
 
 @task()
-def get_pois() -> pd.DataFrame:
-    path = config["POIS"]["PATH"]
+def get_pois(path: str = None) -> pd.DataFrame:
+    path = path or config["POIS"]["PATH"]
     mapquest = get_mapquest()
     df = pd.read_csv(path, sep=";")
     if "Lat" not in df.columns:
