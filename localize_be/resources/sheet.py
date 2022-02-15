@@ -11,7 +11,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 # If modifying these scopes, delete the file token.json.
-from localize_be.config import config
+from localize_be.config import config, logger
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -75,6 +75,7 @@ class Sheet:
                 "city": row_values[3],
                 "property_type": row_values[4] if len(row_values) > 4 else None,
             }))
+        logger.debug(f"Found {len(result)} home(s) in spreadsheet")
         return result
 
     def add_homes(self, homes):
