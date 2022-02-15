@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.8-slim
 
 RUN useradd -ms /bin/bash agent
 RUN mkdir /agent
