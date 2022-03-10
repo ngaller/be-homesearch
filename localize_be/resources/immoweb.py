@@ -27,7 +27,7 @@ SEARCHES = {
     "Home": SearchConfig(
         search_url="https://www.immoweb.be/fr/recherche?propertyTypes=HOUSE"
                    "&minSurface=140&maxSurface=350&maxLandSurface=5000"
-                   "&postalCodes=BE-1315,BE-1357,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310"
+                   "&postalCodes=BE-1315,BE-1360,BE-1367,BE-1370,BE-1457,BE-5030,BE-5031,BE-5080,BE-5310"
                    "&transactionTypes=FOR_SALE&minPrice=175000&priceType=PRICE&minBedroomCount=3&countries=BE"
                    "&maxPrice=470000&orderBy=newest",
         home_url="https://www.immoweb.be/fr/annonce/maison/a-vendre/{}/{}/{}"
@@ -35,7 +35,7 @@ SEARCHES = {
     "Land": SearchConfig(
         search_url="https://www.immoweb.be/fr/recherche/terrain-a-batir/a-vendre?"
                    "countries=BE&maxLandSurface=5000&maxPrice=180000&minLandSurface=800&minPrice=50000&"
-                   "postalCodes=BE-5081,1315,1357,1360,1370,5031,5310&priceType=PRICE&orderBy=newest",
+                   "postalCodes=BE-5081,BE-1360,BE-5031,BE-5310&priceType=PRICE&orderBy=newest",
         home_url="https://www.immoweb.be/fr/annonce/terrain-a-batir/a-vendre/{}/{}/{}"
     )
 }
