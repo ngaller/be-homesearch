@@ -45,6 +45,7 @@ def refetch_cached_homes():
                                                  row["property_type"] or "Home",
                                                  row["city"],
                                                  row["postal_code"])
+                row["price"] = details["Price"]
                 cache.add_home(row, details)
                 count += 1
             except Exception as e:
