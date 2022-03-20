@@ -16,11 +16,11 @@ def filter_old(exclude_homes: List[int]):
 
 @task()
 def sync_new():
-    """Append new houses and mark as synced in home cache"""
+    """Sync newly added and updated houses and mark as synced in home cache"""
     with closing(get_home_cache()) as cache:
         to_sync = cache.get_homes_to_sync()
         if to_sync:
-            get_sheet().add_homes([d[1] for d in to_sync])
+            get_sheet().upsert_homes([d[1] for d in to_sync])
             for id_, _ in to_sync:
                 cache.set_synced(id_)
         return len(to_sync)

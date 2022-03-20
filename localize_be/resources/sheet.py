@@ -4,6 +4,7 @@ Wrapper for Google API to update the spreadsheet
 import os
 import os.path
 from typing import List
+from typing import Tuple
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -49,9 +50,7 @@ def build_service(conf_dir):
 
 class Sheet:
     def __init__(self, spreadsheet_id, spreadsheet_gid, conf_dir="."):
-        print("BUILDING SERVICE")
         self.sheets = build_service(conf_dir)
-        print("DONE")
         self.sheet_id = spreadsheet_id
         self.sheet_gid = spreadsheet_gid
 
@@ -62,6 +61,11 @@ class Sheet:
         return values[0]
 
     def get_homes(self):
+        """
+        Retrieve existing homes from the spreadsheet.
+
+        :returns: an array of tuple with (sheet index, home data)
+        """
         request = self.sheets.values().get(
             spreadsheetId=self.sheet_id,
             range="Houses!A2:E",
@@ -77,6 +81,57 @@ class Sheet:
             }))
         logger.debug(f"Found {len(result)} home(s) in spreadsheet")
         return result
+
+    def upsert_homes(self, homes: List):
+        """
+        Update values for existing homes, and append new homes
+        """
+        existing = self.get_homes()
+        existing_ids = {d[1]["id"] for d in existing}
+        new_homes = [h for h in homes if h["Code #"] not in existing_ids]
+        inserted = 0
+        if new_homes:
+            inserted = self.add_homes(new_homes)
+        updated_homes = [h for h in homes if h["Code #"] in existing_ids]
+        updated = 0
+        if updated_homes:
+            updated = self.update_homes(existing, updated_homes)
+        return (inserted, updated)
+
+    def update_homes(self, existing: List[Tuple], homes: List):
+        """
+        :param existing: an array of tuples (sheet index, home data)
+        :param homes: list of homes to add
+        """
+        headers = self._get_headers()
+        homes_by_id = {h["Code #"]: h for h in homes}
+        skip_headers = {"Image", "Link", "Address"}
+
+        def make_row(id_):
+            # Make row of data based on the id
+            # The values that need to be left unchanged are passed as null
+            # If no match in homes, return an empty list
+            home = homes_by_id.get(id_)
+            if not home:
+                return []
+            return [
+                home.get(h, None) if h not in skip_headers else None
+                for h in headers
+            ]
+
+        updated_rows = [
+            make_row(existing_home["id"])
+            for (_, existing_home) in existing
+        ]
+        result = self.sheets.values().update(
+            spreadsheetId=self.sheet_id,
+            range="Houses!A2",
+            valueInputOption="USER_ENTERED",
+            body={
+                "values": updated_rows
+            }
+        ).execute()
+        return result["updatedRows"]
 
     def add_homes(self, homes):
         for home in homes:
@@ -120,6 +175,7 @@ class Sheet:
                     }
                 ]
             }).execute()
+        return updated_rows
 
     def set_home_filter(self, exclude_ids: List[int]):
         self.sheets.batchUpdate(

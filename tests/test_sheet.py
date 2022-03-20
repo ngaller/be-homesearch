@@ -23,6 +23,15 @@ def test_get_homes(svc):
         "city": "Perwez",
         "property_type": "Home"
     })
+    assert [h[0] for h in homes[0:10]] == list(range(10))
+
+
+def test_update_homes(svc):
+    result = svc.upsert_homes([{
+        "Code #": 9365421,
+        "Energy": "E"
+    }])
+    assert result == (0, 1)
 
 
 def test_set_filter(svc):
