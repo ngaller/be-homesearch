@@ -45,8 +45,9 @@ def refetch_cached_homes():
                                                  row["property_type"] or "Home",
                                                  row["city"],
                                                  row["postal_code"])
-                row["price"] = details["Price"]
-                cache.add_home(row, details)
+                row_dict = dict(zip(row.keys(), row))
+                row_dict["price"] = details["Price"]
+                cache.add_home(row_dict, details)
                 count += 1
             except Exception as e:
                 logger.warning(f"Could not fetch home {row['id']}: {e}")
