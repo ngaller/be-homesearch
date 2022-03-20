@@ -12,6 +12,6 @@ def geocode_homes():
     with closing(get_home_cache()) as cache:
         homes = cache.get_homes_to_geocode()
         for id_, home in homes:
-            home["Lat"], home["Lng"] = mapquest.geocode(f"{home['Street']}, {home['City']}")
+            home["Lat"], home["Lng"] = mapquest.geocode(f"{home['Street']}, {home['Postal code']} {home['City']}")
             cache.update_home(id_, home)
             cache.set_geocoded(id_)
