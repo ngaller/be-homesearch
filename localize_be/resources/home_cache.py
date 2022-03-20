@@ -67,12 +67,12 @@ class HomeCache:
 
     def get_homes_to_sync(self):
         with closing(self.con.cursor()) as cur:
-            cur.execute("select id, details from homes where geocoded=1 and synced=0")
+            cur.execute("select id, details from homes where geocoded=1 and synced=0 and details <> '{}'")
             return [(row[0], json.loads(row[1])) for row in cur.fetchall()]
 
     def get_homes_to_geocode(self):
         with closing(self.con.cursor()) as cur:
-            cur.execute("select id, details from homes where geocoded=0")
+            cur.execute("select id, details from homes where geocoded=0 and details <> '{}'")
             return [(row[0], json.loads(row[1])) for row in cur.fetchall()]
 
     def get_synced_ids(self):
