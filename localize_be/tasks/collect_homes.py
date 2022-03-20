@@ -4,6 +4,7 @@ from typing import List
 import pandas as pd
 from prefect import task
 
+from localize_be.config import logger
 from localize_be.resources.home_cache import get_home_cache
 from localize_be.resources.immoweb import get_immoweb
 
@@ -32,6 +33,21 @@ def get_new_homes(search_result: pd.DataFrame):
             else:
                 print("Already has home", code)
         return count
+
+
+@task()
+def refetch_cached_homes():
+    with closing(get_home_cache()) as cache:
+        count = 0
+        for row in cache.get_homes_missing_details():
+            try:
+                details = get_immoweb().get_home(row["id"], row["property_type"], row["city"],
+                                                 row["postal_code"])
+                cache.add_home(row.to_dict(), details)
+                count += 1
+            except Exception as e:
+                logger.warning(f"Could not fetch home {row['id']}: {e}")
+    return count
 
 
 @task()
