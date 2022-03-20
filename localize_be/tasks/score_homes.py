@@ -12,7 +12,7 @@ from localize_be.resources.home_cache import get_home_cache
 def score_all(pois: pd.DataFrame, rescore: bool = False):
     with closing(get_home_cache()) as home_cache:
         homes = home_cache.get_homes_to_sync() if not rescore else home_cache.get_homes_synced()
-        logger.debug(f"Rescoring {len(homes)} homes")
+        logger.debug(f"Scoring {len(homes)} homes")
         for id_, details in homes:
             calculate_score(details, pois)
             home_cache.update_home(id_, details)
