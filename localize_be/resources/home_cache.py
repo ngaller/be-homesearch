@@ -59,10 +59,10 @@ class HomeCache:
             cur.execute("select id from homes where id=?", (id_,))
             return cur.fetchall()
 
-    def get_homes_synced(self):
-        """Get already synced (and geocoded) homes"""
+    def get_homes_geocoded(self):
+        """Get already geocoded homes (synced or not)"""
         with closing(self.con.cursor()) as cur:
-            cur.execute("select id, details from homes where geocoded=1 and synced=1 and details <> '{}'")
+            cur.execute("select id, details from homes where geocoded=1 and details <> '{}'")
             return [(row[0], json.loads(row[1])) for row in cur.fetchall()]
 
     def get_homes_to_sync(self):
