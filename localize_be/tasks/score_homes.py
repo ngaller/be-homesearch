@@ -14,5 +14,8 @@ def score_all(pois: pd.DataFrame, rescore: bool = False):
         homes = home_cache.get_homes_to_sync() if not rescore else home_cache.get_homes_geocoded()
         logger.debug(f"Scoring {len(homes)} homes")
         for id_, details in homes:
-            calculate_score(details, pois)
-            home_cache.update_home(id_, details)
+            try:
+                calculate_score(details, pois)
+                home_cache.update_home(id_, details)
+            except Exception as e:
+                logger.warning(f"Error updating score for home {id_}: {e}")
