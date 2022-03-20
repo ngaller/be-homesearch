@@ -77,10 +77,10 @@ class HomeCache:
             return [(row[0], json.loads(row[1])) for row in cur.fetchall()]
 
     def get_homes_missing_details(self):
+        self.con.row_factory = Row
         with closing(self.con.cursor()) as cur:
             sql = "select id, property_type, postal_code, city from homes where details = '{}'"
             cur.execute(sql)
-            self.con.row_factory = Row
             return cur.fetchall()
 
     def get_synced_ids(self):
