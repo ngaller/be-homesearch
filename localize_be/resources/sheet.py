@@ -72,6 +72,8 @@ class Sheet:
         ).execute()
         result = []
         for i, row_values in enumerate(request['values']):
+            if not row_values[2]:
+                continue
             result.append((i, {
                 "id": int(row_values[0]),
                 "postal_code": row_values[1],
