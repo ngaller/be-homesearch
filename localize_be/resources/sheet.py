@@ -90,9 +90,11 @@ class Sheet:
         existing_ids = {d[1]["id"] for d in existing}
         new_homes = [h for h in homes if h["Code #"] not in existing_ids]
         inserted = 0
+        logger.debug(f"Add {len(new_homes)} home(s) in spreadsheet")
         if new_homes:
             inserted = self.add_homes(new_homes)
         updated_homes = [h for h in homes if h["Code #"] in existing_ids]
+        logger.debug(f"Update {len(updated_homes)} home(s) in spreadsheet")
         updated = 0
         if updated_homes:
             updated = self.update_homes(existing, updated_homes)
