@@ -49,7 +49,8 @@ def test_calculate_score():
 
 def test_calculate_distances_for_pois():
     pois = pd.DataFrame([
-        {"Category": "School", "Weight": 12, "Lat": 50.63604, "Lng": 4.78471}
+        {"Category": "School", "Weight": 12, "Lat": 50.63604, "Lng": 4.78471},
+        {"Category": "AV", "Weight": 12, "Lat": 50.86587, "Lng": 4.42057}
     ])
     d = {
         "Lat": 50.5,
@@ -63,6 +64,7 @@ def test_calculate_distances_for_pois():
     }
     d = scoring.calculate_score(d, pois)
     assert "dist.Total" in d, "Should save distance total"
-    assert round(d["dist.Total"], 0) == 16
+    assert round(d["dist.Total"], 0) == 31
     assert "dist.School" in d, "Should save distance for POIS"
     assert round(d["dist.School"], 0) == 16
+    assert round(d["dist.AV"], 0) == 45

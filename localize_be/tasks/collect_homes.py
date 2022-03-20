@@ -19,7 +19,7 @@ def search_homes() -> pd.DataFrame:
 
 @task()
 def get_new_homes(search_result: pd.DataFrame):
-    """Get detailed information for the new houses"""
+    """Get detailed information for the new houses (the ones that are not in cache yet)"""
     with closing(get_home_cache()) as cache:
         count = 0
         for _, row in search_result.iterrows():

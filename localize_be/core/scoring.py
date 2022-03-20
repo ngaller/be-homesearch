@@ -53,7 +53,7 @@ def calculate_score(details: Dict, pois: pd.DataFrame):
     """
     distances = _distance_pois(details, pois)
     for i, h in pois.iterrows():
-        details[f"dist.{h['Category']}"] = distances[0]
+        details[f"dist.{h['Category']}"] = distances[i]
     details["dist.Total"] = _distance_average(distances, pois)
     details["dist.Score"] = _distance_score_predictor().predict([[details["dist.Total"]]])[0]
     details["size.Score"] = _size_score_predictor().predict([[details["SqMeter"]]])[0] if details["SqMeter"] else 0
