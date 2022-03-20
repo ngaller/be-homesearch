@@ -41,7 +41,9 @@ def refetch_cached_homes():
         count = 0
         for row in cache.get_homes_missing_details():
             try:
-                details = get_immoweb().get_home(row["id"], row["property_type"], row["city"],
+                details = get_immoweb().get_home(row["id"],
+                                                 row["property_type"] or "Home",
+                                                 row["city"],
                                                  row["postal_code"])
                 cache.add_home(row.to_dict(), details)
                 count += 1
